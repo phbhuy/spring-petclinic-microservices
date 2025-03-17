@@ -1,9 +1,11 @@
 pipeline {
     agent any
+
     environment {
         // Đảm bảo rằng Jenkins có quyền truy cập vào Maven Wrapper
         MAVEN_OPTS = "-Dmaven.repo.local=$WORKSPACE/.m2/repository"
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -12,19 +14,35 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build and Test - Customer Service') {
             steps {
                 script {
-                    // Chạy Maven Wrapper để build ứng dụng mà không chạy tests
-                    sh './mvnw clean install -DskipTests'
+                    dir('spring-petclinic-customers-service') {
+                        // Build và test cho customer-service
+                        sh './mvnw clean install -DskipTests'
+                    }
                 }
             }
-            post {
-                success {
-                    echo 'Build thành công!'
+        }
+
+        stage('Build and Test - Vets Service') {
+            steps {
+                script {
+                    dir('spring-petclinic-vets-service') {
+                        // Build và test cho vets-service
+                        sh './mvnw clean install -DskipTests'
+                    }
                 }
-                failure {
-                    echo 'Build thất bại!'
+            }
+        }
+
+        stage('Build and Test - Visits Service') {
+            steps {
+                script {
+                    dir('spring-petclinic-visits-service') {
+                        // Build và test cho visits-service
+                        sh './mvnw clean install -DskipTests'
+                    }
                 }
             }
         }
@@ -32,7 +50,7 @@ pipeline {
 
     post {
         always {
-            // Bước này sẽ luôn được thực thi bất kể thành công hay thất bại
+            // Cleanup sau khi pipeline chạy xong
             cleanWs()
         }
     }
