@@ -7,10 +7,8 @@ pipeline {
                 script {
                     echo "Building service..."
                     dir('spring-petclinic-vets-service') {
-                        // Cấp quyền thực thi cho mvnw
-                        sh 'chmod +x ./.mvn/wrapper/mvnw'
-                        // Chạy mvnw với đúng đường dẫn
-                        sh './.mvn/wrapper/mvnw clean install -DskipTests'
+                        // Sử dụng đường dẫn tới maven-wrapper.jar và chạy bằng Java
+                        sh 'java -jar ./.mvn/wrapper/maven-wrapper.jar clean install -DskipTests'
                     }
                 }
             }
@@ -20,8 +18,8 @@ pipeline {
                 script {
                     echo "Running tests..."
                     dir('spring-petclinic-vets-service') {
-                        // Chạy mvnw để test
-                        sh './.mvn/wrapper/mvnw test'
+                        // Sử dụng đường dẫn tới maven-wrapper.jar và chạy bằng Java
+                        sh 'java -jar ./.mvn/wrapper/maven-wrapper.jar test'
                     }
                 }
             }
