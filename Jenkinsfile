@@ -7,7 +7,8 @@ pipeline {
                 script {
                     echo "Building service..."
                     dir('spring-petclinic-vets-service') {
-                        sh './mvnw clean install -DskipTests'
+                        // Sử dụng đúng đường dẫn đến Maven Wrapper
+                        sh './.mvn/wrapper/mvnw clean install -DskipTests'
                     }
                 }
             }
@@ -17,7 +18,8 @@ pipeline {
                 script {
                     echo "Running tests..."
                     dir('spring-petclinic-vets-service') {
-                        sh './mvnw test'
+                        // Sử dụng đúng đường dẫn đến Maven Wrapper
+                        sh './.mvn/wrapper/mvnw test'
                     }
                 }
             }
