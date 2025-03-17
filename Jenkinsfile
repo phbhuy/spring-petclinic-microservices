@@ -15,7 +15,7 @@ pipeline {
         stage('Build') {
             steps {
                 dir('spring-petclinic-vets-service') {
-                    sh './mvnw clean install -DskipTests'  // Sử dụng Maven Wrapper
+                    sh './mvnw/wrapper/ clean install -DskipTests'  // Sử dụng Maven Wrapper
                 }
             }
         }
