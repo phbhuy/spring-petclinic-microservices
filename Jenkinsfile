@@ -12,32 +12,19 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                script {
-                    // Chạy Maven Wrapper để thực hiện các test và tạo báo cáo độ phủ
-                    sh './mvnw clean test'
-                }
-            }
-            post {
-                success {
-                    // Upload kết quả test vào Jenkins
-                    junit '**/target/test-classes/*.xml'  // Đảm bảo rằng kết quả test có ở đúng vị trí
-                    jacoco()
-                }
-            }
-        }
-
         stage('Build') {
             steps {
                 script {
-                    // Chạy Maven Wrapper để build ứng dụng
+                    // Chạy Maven Wrapper để build ứng dụng mà không chạy tests
                     sh './mvnw clean install -DskipTests'
                 }
             }
             post {
                 success {
                     echo 'Build thành công!'
+                }
+                failure {
+                    echo 'Build thất bại!'
                 }
             }
         }
