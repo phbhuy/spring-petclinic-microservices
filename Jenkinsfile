@@ -58,12 +58,12 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            // Không xóa workspace sau khi pipeline hoàn thành
-            // cleanWs()  // Bỏ qua hoặc xóa dòng này để không dọn dẹp workspace
-        }
-    }
+    // post {
+    //     always {
+    //         // Không xóa workspace sau khi pipeline hoàn thành
+    //         // cleanWs()  // Bỏ qua hoặc xóa dòng này để không dọn dẹp workspace
+    //     }
+    // }
 }
 
 def buildService(serviceName) {
