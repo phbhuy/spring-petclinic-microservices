@@ -4,7 +4,7 @@ pipeline {
         stage('Check Java and Maven') {
             steps {
                 sh 'java -version'
-                sh 'mvn -version'
+                sh './mvnw -version'  // Sử dụng Maven Wrapper thay vì mvn
             }
         }
         stage('Checkout') {
@@ -15,7 +15,7 @@ pipeline {
         stage('Build') {
             steps {
                 dir('spring-petclinic-vets-service') {
-                    sh './mvnw clean install -DskipTests'
+                    sh './mvnw clean install -DskipTests'  // Sử dụng Maven Wrapper
                 }
             }
         }
