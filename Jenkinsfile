@@ -10,25 +10,37 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Check for Changes') {
             steps {
-                sh './mvnw clean install -DskipTests'
-            }
-        }
+                script {
+                    // Lệnh git diff để kiểm tra sự thay đổi trong các thư mục microservice
+                    def changedFiles = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim()
+                    
+                    // Kiểm tra xem có thay đổi trong thư mục của từng service
+                    def shouldBuildCustomerService = changedFiles.contains("spring-petclinic-customers-service")
+                    def shouldBuildVetsService = changedFiles.contains("spring-petclinic-vets-service")
+                    def shouldBuildVisitsService = changedFiles.contains("spring-petclinic-visits-service")
 
-        stage('Test') {
-            steps {
-                // Chạy các unit test và in chi tiết test ra console
-                sh './mvnw clean test -X'  // Thêm tùy chọn -X để hiển thị chi tiết hơn trong console log
-            }
-            post {
-                success {
-                    // Đảm bảo rằng báo cáo test có ở đúng vị trí
-                    junit '**/target/surefire-reports/*.xml'  // Chỉ định file báo cáo test ở đây
-                    jacoco()  // Nếu có sử dụng JaCoCo để kiểm tra độ phủ
-                }
-                failure {
-                    echo 'Test thất bại!'
+                    // Build và test cho service có thay đổi
+                    if (shouldBuildCustomerService) {
+                        echo 'Changes detected in customer-service, building and testing...'
+                        buildService('spring-petclinic-customers-service')
+                    }
+
+                    if (shouldBuildVetsService) {
+                        echo 'Changes detected in vets-service, building and testing...'
+                        buildService('spring-petclinic-vets-service')
+                    }
+
+                    if (shouldBuildVisitsService) {
+                        echo 'Changes detected in visits-service, building and testing...'
+                        buildService('spring-petclinic-visits-service')
+                    }
+
+                    // Nếu không có thay đổi trong thư mục, thông báo và bỏ qua build
+                    if (!shouldBuildCustomerService && !shouldBuildVetsService && !shouldBuildVisitsService) {
+                        echo 'No changes detected in services, skipping build.'
+                    }
                 }
             }
         }
@@ -36,7 +48,16 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            // Không xóa workspace sau khi chạy xong pipeline
+            // cleanWs()  // Bỏ qua hoặc xóa dòng này để không dọn dẹp workspace
         }
     }
+}
+
+def buildService(serviceName) {
+    // Build và test từng service dựa trên tên của service
+    sh "cd ${serviceName} && ./mvnw clean install -DskipTests"
+    sh "cd ${serviceName} && ./mvnw clean test"
+    junit "**/${serviceName}/target/surefire-reports/*.xml"
+    jacoco()
 }
