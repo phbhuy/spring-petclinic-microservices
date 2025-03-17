@@ -35,7 +35,7 @@ pipeline {
             steps {
                 script {
                     // Đọc độ phủ từ báo cáo JaCoCo
-                    def coverage = sh(script: "grep -oP 'TOTAL\s+\K\d+(?=%)' target/site/jacoco/index.html", returnStdout: true).trim()
+                    def coverage = sh(script: "grep -oP 'TOTAL\\s+\\K\\d+(?=%)' target/site/jacoco/index.html", returnStdout: true).trim()
                     echo "Test coverage is: ${coverage}%"
 
                     // Nếu độ phủ dưới 70%, dừng pipeline
