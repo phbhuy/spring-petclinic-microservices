@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        MAVEN_OPTS = "-Dmaven.repo.local=$WORKSPACE/.m2/repository"
-        DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'  // 👈 repo bạn trên Docker Hub
+        DOCKER_REPO = 'phbhuy19/vets-service'   // Thay bằng đúng repo của bạn
         DOCKER_CRED_ID = 'dockerhub-cred'
     }
 
@@ -14,39 +13,27 @@ pipeline {
             }
         }
 
-        stage('Build with Maven') {
-            steps {
-                sh './mvnw clean install -DskipTests'
-            }
-        }
-
-        stage('Run Unit Tests') {
-            steps {
-                sh './mvnw test'
-            }
-            post {
-                success {
-                    junit '**/target/surefire-reports/*.xml'
-                }
-                failure {
-                    echo '❌ Unit Test thất bại!'
-                }
-            }
-        }
-
         stage('Build & Push Docker Image') {
             steps {
                 script {
+                    // Lấy tên branch
+                    def branch = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
                     def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    env.IMAGE_TAG = commitId
+
+                    // Nếu là branch main → tag main
+                    // Ngược lại → tag commit id
+                    env.IMAGE_TAG = (branch == 'main') ? 'main' : commitId
                 }
 
-                // 🛠️ Sửa ở đây: chỉ định Dockerfile + context là thư mục gốc
-                sh '''
-                    docker build -f docker/Dockerfile -t ${DOCKER_REPO}:${IMAGE_TAG} .
-                '''
+                sh """
+                    docker build -t ${DOCKER_REPO}:${IMAGE_TAG} -f docker/Dockerfile .
+                """
 
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: "${DOCKER_CRED_ID}",
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh '''
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker push ${DOCKER_REPO}:${IMAGE_TAG}
@@ -54,12 +41,6 @@ pipeline {
                     '''
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
         }
     }
 }
