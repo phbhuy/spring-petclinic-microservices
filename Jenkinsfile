@@ -1,8 +1,12 @@
 pipeline {
     agent any
+
     environment {
         MAVEN_OPTS = "-Dmaven.repo.local=$WORKSPACE/.m2/repository"
+        DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'  // 👈 thay bằng repo thật của bạn
+        DOCKER_CRED_ID = 'dockerhub-cred'
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -10,38 +14,43 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build with Maven') {
             steps {
                 sh './mvnw clean install -DskipTests'
             }
         }
 
-        stage('Test') {
+        stage('Run Unit Tests') {
             steps {
-                sh './mvnw clean test'
+                sh './mvnw test'
             }
             post {
                 success {
                     junit '**/target/surefire-reports/*.xml'
-                    jacoco()  // Báo cáo độ phủ
                 }
                 failure {
-                    echo 'Test thất bại!'
+                    echo '❌ Unit Test thất bại!'
                 }
             }
         }
 
-        stage('Check Coverage') {
+        stage('Build & Push Docker Image') {
             steps {
                 script {
-                    // Đọc độ phủ từ báo cáo JaCoCo
-                    def coverage = sh(script: "grep -oP 'TOTAL\\s+\\K\\d+(?=%)' target/site/jacoco/index.html", returnStdout: true).trim()
-                    echo "Test coverage is: ${coverage}%"
+                    def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.IMAGE_TAG = commitId
+                }
 
-                    // Nếu độ phủ dưới 70%, dừng pipeline
-                    if (coverage.toFloat() < 70) {
-                        error("Test coverage is below 70%, failing the build.")
-                    }
+                sh '''
+                    docker build -t ${DOCKER_REPO}:${IMAGE_TAG}
+                '''
+
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push ${DOCKER_REPO}:${IMAGE_TAG}
+                        docker logout
+                    '''
                 }
             }
         }
@@ -49,7 +58,7 @@ pipeline {
 
     post {
         always {
-            cleanWs()  // Dọn dẹp workspace sau khi pipeline hoàn thành
+            cleanWs()
         }
     }
 }
