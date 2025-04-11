@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         MAVEN_OPTS = "-Dmaven.repo.local=$WORKSPACE/.m2/repository"
-        DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'  // 👈 thay bằng repo thật của bạn
+        DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'  // 👈 repo bạn trên Docker Hub
         DOCKER_CRED_ID = 'dockerhub-cred'
     }
 
@@ -41,8 +41,9 @@ pipeline {
                     env.IMAGE_TAG = commitId
                 }
 
+                // 🛠️ Sửa ở đây: chỉ định Dockerfile + context là thư mục gốc
                 sh '''
-                    docker build -t ${DOCKER_REPO}:${IMAGE_TAG}
+                    docker build -f docker/Dockerfile -t ${DOCKER_REPO}:${IMAGE_TAG} .
                 '''
 
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
