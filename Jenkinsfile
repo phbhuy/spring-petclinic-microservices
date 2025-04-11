@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'   // Thay bằng đúng repo của bạn
+        DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'
         DOCKER_CRED_ID = 'dockerhub-cred'
     }
 
@@ -16,13 +16,17 @@ pipeline {
         stage('Build & Push Docker Image') {
             steps {
                 script {
-                    // Lấy tên branch
-                    def branch = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    // Dùng biến môi trường BRANCH_NAME có sẵn trong Jenkins
+                    def branch = env.BRANCH_NAME?.replaceFirst(/^origin\//, '')?.trim()
                     def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
 
-                    // Nếu là branch main → tag main
-                    // Ngược lại → tag commit id
+                    // Debug xem lấy đúng branch chưa
+                    echo "▶️ Branch: ${branch}"
+                    echo "🔖 Commit: ${commitId}"
+
+                    // Gán tag theo yêu cầu
                     env.IMAGE_TAG = (branch == 'main') ? 'main' : commitId
+                    echo "📦 Tag image: ${env.IMAGE_TAG}"
                 }
 
                 sh """
@@ -44,3 +48,4 @@ pipeline {
         }
     }
 }
+
