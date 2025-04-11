@@ -33,11 +33,11 @@ pipeline {
                     def branch = getGitBranchName()
                     def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
 
-                    echo "▶️ Branch: ${branch}"
-                    echo "🔖 Commit: ${commitId}"
+                    echo "Branch: ${branch}"
+                    echo "Commit: ${commitId}"
 
                     // Tag là 'main' nếu đúng branch main, còn lại dùng commit
-                    env.IMAGE_TAG = (branch == 'main') ? 'main' : commitId
+                    env.IMAGE_TAG = (branch == '*/main') ? 'main' : commitId
                     echo "📦 Tag image: ${env.IMAGE_TAG}"
                 }
 
