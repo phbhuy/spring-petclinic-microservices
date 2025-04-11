@@ -25,15 +25,18 @@ pipeline {
         stage('Build & Push Docker Image') {
             steps {
                 script {
-                    def branch = sh(
-                        script: "git name-rev --name-only HEAD",
-                        returnStdout: true
-                    ).trim()
+                    // 👇 Hàm lấy tên nhánh từ cấu hình SCM
+                    def getGitBranchName = {
+                        return scm.branches[0].name.replaceAll('^origin/', '').trim()
+                    }
+
+                    def branch = getGitBranchName()
                     def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
 
                     echo "▶️ Branch: ${branch}"
                     echo "🔖 Commit: ${commitId}"
 
+                    // Tag là 'main' nếu đúng branch main, còn lại dùng commit
                     env.IMAGE_TAG = (branch == 'main') ? 'main' : commitId
                     echo "📦 Tag image: ${env.IMAGE_TAG}"
                 }
