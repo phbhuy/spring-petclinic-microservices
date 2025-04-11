@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REPO = 'phbhuy19/vets-service'   // Thay bằng đúng repo của bạn
+        DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'   // Thay bằng đúng repo của bạn
         DOCKER_CRED_ID = 'dockerhub-cred'
     }
 
