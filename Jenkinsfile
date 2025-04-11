@@ -9,28 +9,31 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                script {
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: '**']],
+                        userRemoteConfigs: [[
+                            url: 'https://github.com/phbhuy/spring-petclinic-microservices.git',
+                            refspec: '+refs/heads/*:refs/remotes/origin/*'
+                        ]]
+                    ])
+                }
             }
         }
 
         stage('Build & Push Docker Image') {
             steps {
                 script {
-                    // Lấy tên branch chính xác
                     def branch = sh(
-                        script: "git symbolic-ref --short HEAD || git rev-parse --abbrev-ref HEAD",
+                        script: "git name-rev --name-only HEAD",
                         returnStdout: true
                     ).trim()
-
-                    def commitId = sh(
-                        script: 'git rev-parse --short HEAD',
-                        returnStdout: true
-                    ).trim()
+                    def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
 
                     echo "▶️ Branch: ${branch}"
                     echo "🔖 Commit: ${commitId}"
 
-                    // Tag là 'main' nếu đúng branch main, còn lại dùng commit
                     env.IMAGE_TAG = (branch == 'main') ? 'main' : commitId
                     echo "📦 Tag image: ${env.IMAGE_TAG}"
                 }
