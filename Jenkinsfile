@@ -16,15 +16,21 @@ pipeline {
         stage('Build & Push Docker Image') {
             steps {
                 script {
-                    // Dùng biến môi trường BRANCH_NAME có sẵn trong Jenkins
-                    def branch = env.BRANCH_NAME?.replaceFirst(/^origin\//, '')?.trim()
-                    def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    // Lấy tên branch chính xác
+                    def branch = sh(
+                        script: "git symbolic-ref --short HEAD || git rev-parse --abbrev-ref HEAD",
+                        returnStdout: true
+                    ).trim()
 
-                    // Debug xem lấy đúng branch chưa
+                    def commitId = sh(
+                        script: 'git rev-parse --short HEAD',
+                        returnStdout: true
+                    ).trim()
+
                     echo "▶️ Branch: ${branch}"
                     echo "🔖 Commit: ${commitId}"
 
-                    // Gán tag theo yêu cầu
+                    // Tag là 'main' nếu đúng branch main, còn lại dùng commit
                     env.IMAGE_TAG = (branch == 'main') ? 'main' : commitId
                     echo "📦 Tag image: ${env.IMAGE_TAG}"
                 }
@@ -48,4 +54,3 @@ pipeline {
         }
     }
 }
-
