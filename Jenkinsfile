@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'
         DOCKER_CRED_ID = 'dockerhub-cred'
+        SERVICES = ['spring-petclinic-vets-service', 'spring-petclinic-visits-service', 'spring-petclinic-customers-service'] // Danh sách các service
     }
 
     stages {
@@ -25,7 +26,7 @@ pipeline {
         stage('Build & Test with Maven') {
             steps {
                 script {
-                    echo "Building and testing with Maven..."
+                    echo "Building and testing all services with Maven..."
                     sh """
                         ./mvnw clean package -DskipTests=false
                     """
@@ -52,18 +53,20 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker Images') {
             steps {
                 script {
-                    echo "Building Docker image..."
-                    sh """
-                        docker build -t ${DOCKER_REPO}:${IMAGE_TAG} -f docker/Dockerfile .
-                    """
+                    for (service in SERVICES) {
+                        echo "Building Docker image for service: ${service}..."
+                        sh """
+                            docker build -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} -f docker/${service}/Dockerfile .
+                        """
+                    }
                 }
             }
         }
 
-        stage('Push to DockerHub') {
+        stage('Push Docker Images to DockerHub') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: "${DOCKER_CRED_ID}",
@@ -71,12 +74,14 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     script {
-                        echo "Pushing Docker image to DockerHub..."
-                        sh '''
-                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                            docker push ${DOCKER_REPO}:${IMAGE_TAG}
-                            docker logout
-                        '''
+                        for (service in SERVICES) {
+                            echo "Pushing Docker image for service: ${service} to DockerHub..."
+                            sh """
+                                echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                                docker push ${DOCKER_REPO}-${service}:${IMAGE_TAG}
+                                docker logout
+                            """
+                        }
                     }
                 }
             }
