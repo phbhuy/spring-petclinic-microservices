@@ -60,7 +60,10 @@ pipeline {
                     for (service in services) {
                         echo "Building Docker image for service: ${service}..."
                         sh """
-                            docker build -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} -f docker/${service}/Dockerfile .
+                            docker build \
+                                --build-arg ARTIFACT_NAME=${service}/target/*.jar \
+                                -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} \
+                                -f docker/Dockerfile .
                         """
                     }
                 }
