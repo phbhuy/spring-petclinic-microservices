@@ -22,10 +22,20 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
+        stage('Build & Test with Maven') {
             steps {
                 script {
-                    // 👇 Hàm lấy tên nhánh từ cấu hình SCM
+                    echo "Building and testing with Maven..."
+                    sh """
+                        ./mvnw clean package -DskipTests=false
+                    """
+                }
+            }
+        }
+
+        stage('Prepare Build Metadata') {
+            steps {
+                script {
                     def getGitBranchName = {
                         return scm.branches[0].name.replaceAll('^origin/', '').trim()
                     }
@@ -36,25 +46,38 @@ pipeline {
                     echo "Branch: ${branch}"
                     echo "Commit: ${commitId}"
 
-                    //  Cập nhật logic tag: 'latest' nếu branch là main, ngược lại dùng commit ID
                     env.IMAGE_TAG = (branch == 'main') ? 'latest' : commitId
-                    echo " Tag image: ${env.IMAGE_TAG}"
+                    echo "Tag image: ${env.IMAGE_TAG}"
                 }
+            }
+        }
 
-                sh """
-                    docker build -t ${DOCKER_REPO}:${IMAGE_TAG} -f docker/Dockerfile .
-                """
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "Building Docker image..."
+                    sh """
+                        docker build -t ${DOCKER_REPO}:${IMAGE_TAG} -f docker/Dockerfile .
+                    """
+                }
+            }
+        }
 
+        stage('Push to DockerHub') {
+            steps {
                 withCredentials([usernamePassword(
                     credentialsId: "${DOCKER_CRED_ID}",
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_REPO}:${IMAGE_TAG}
-                        docker logout
-                    '''
+                    script {
+                        echo "Pushing Docker image to DockerHub..."
+                        sh '''
+                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                            docker push ${DOCKER_REPO}:${IMAGE_TAG}
+                            docker logout
+                        '''
+                    }
                 }
             }
         }
