@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'
         DOCKER_CRED_ID = 'dockerhub-cred'
-        SERVICES = ['spring-petclinic-vets-service', 'spring-petclinic-visits-service', 'spring-petclinic-customers-service'] // Danh sách các service
+        SERVICES = 'spring-petclinic-vets-service,spring-petclinic-visits-service,spring-petclinic-customers-service' // Danh sách các service dưới dạng chuỗi
     }
 
     stages {
@@ -56,7 +56,8 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    for (service in SERVICES) {
+                    def services = SERVICES.split(',') // Chuyển chuỗi thành danh sách
+                    for (service in services) {
                         echo "Building Docker image for service: ${service}..."
                         sh """
                             docker build -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} -f docker/${service}/Dockerfile .
@@ -74,7 +75,8 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     script {
-                        for (service in SERVICES) {
+                        def services = SERVICES.split(',') // Chuyển chuỗi thành danh sách
+                        for (service in services) {
                             echo "Pushing Docker image for service: ${service} to DockerHub..."
                             sh """
                                 echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
