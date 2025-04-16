@@ -36,9 +36,9 @@ pipeline {
                     echo "Branch: ${branch}"
                     echo "Commit: ${commitId}"
 
-                    // Tag là 'main' nếu đúng branch main, còn lại dùng commit
-                    env.IMAGE_TAG = (branch == '*/main') ? 'main' : commitId
-                    echo "📦 Tag image: ${env.IMAGE_TAG}"
+                    //  Cập nhật logic tag: 'latest' nếu branch là main, ngược lại dùng commit ID
+                    env.IMAGE_TAG = (branch == 'main') ? 'latest' : commitId
+                    echo " Tag image: ${env.IMAGE_TAG}"
                 }
 
                 sh """
