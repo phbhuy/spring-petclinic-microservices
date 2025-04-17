@@ -58,17 +58,19 @@ pipeline {
                 script {
                     def services = SERVICES.split(',') // Chuyển chuỗi thành danh sách
                     for (service in services) {
-                        // Lấy tên file JAR cụ thể
-                        def jarFile = sh(script: "ls ${service}/target/*.jar", returnStdout: true).trim()
-                        echo "Building Docker image for service: ${service} with JAR file: ${jarFile}..."
-                        def jarFileName = jarFile.tokenize('/').last()
-                        def jarDir = jarFile.replace("/${jarFileName}", "")
+                        def jarPath = sh(script: "ls ${service}/target/*.jar", returnStdout: true).trim()
+                        def jarFileName = jarPath.tokenize('/').last()
+
+                        echo "Building Docker image for service: ${service} with JAR: ${jarFileName}"
+
+                        // Copy file .jar vào thư mục ./docker để làm context build
                         sh """
+                            cp ${jarPath} ./docker/${jarFileName}
                             docker build \
                                 --build-arg ARTIFACT_NAME=${jarFileName} \
-                                --build-arg JAR_DIR=${jarDir} \
                                 -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} \
-                                -f ./docker/Dockerfile .
+                                -f ./docker/Dockerfile ./docker
+                            rm ./docker/${jarFileName}
                         """
                     }
                 }
