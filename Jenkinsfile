@@ -4,7 +4,13 @@ pipeline {
     environment {
         DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'
         DOCKER_CRED_ID = 'dockerhub-cred'
-        SERVICES = 'spring-petclinic-vets-service,spring-petclinic-visits-service,spring-petclinic-customers-service' // Danh sách các service dưới dạng chuỗi
+        SERVICES = 'spring-petclinic-config-server,
+                    spring-petclinic-discovery-server,
+                    spring-petclinic-api-gateway,
+                    spring-petclinic-genai-service,
+                    spring-petclinic-vets-service,
+                    spring-petclinic-visits-service,
+                    spring-petclinic-customers-service' // Danh sách các service dưới dạng chuỗi
     }
 
     stages {
@@ -68,7 +74,7 @@ pipeline {
                             cp ${jarPath} ./docker/${jarFileName}
                             docker build \
                                 --build-arg ARTIFACT_NAME=${jarFileName} \
-                                -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} \
+                                -t ${DOCKER_REPO}:${service}-${IMAGE_TAG} \
                                 -f ./docker/Dockerfile ./docker
                             rm ./docker/${jarFileName}
                         """
@@ -90,7 +96,7 @@ pipeline {
                             echo "Pushing Docker image for service: ${service} to DockerHub..."
                             sh """
                                 echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                                docker push ${DOCKER_REPO}-${service}:${IMAGE_TAG}
+                                docker push ${DOCKER_REPO}:${service}-${IMAGE_TAG}
                                 docker logout
                             """
                         }
