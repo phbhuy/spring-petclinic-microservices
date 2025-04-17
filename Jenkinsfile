@@ -61,11 +61,13 @@ pipeline {
                         // Lấy tên file JAR cụ thể
                         def jarFile = sh(script: "ls ${service}/target/*.jar", returnStdout: true).trim()
                         echo "Building Docker image for service: ${service} with JAR file: ${jarFile}..."
+                        def jarFileName = jarFile.tokenize('/').last()
+                        def jarDir = jarFile.replace("/${jarFileName}", "")
                         sh """
                             docker build \
-                                --build-arg ARTIFACT_NAME=${jarFile} \
+                                --build-arg ARTIFACT_NAME=${jarFileName} \
                                 -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} \
-                                -f docker/Dockerfile .
+                                -f ${service}/Dockerfile ${jarDir}
                         """
                     }
                 }
