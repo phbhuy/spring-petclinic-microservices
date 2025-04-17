@@ -58,10 +58,12 @@ pipeline {
                 script {
                     def services = SERVICES.split(',') // Chuyển chuỗi thành danh sách
                     for (service in services) {
-                        echo "Building Docker image for service: ${service}..."
+                        // Lấy tên file JAR cụ thể
+                        def jarFile = sh(script: "ls ${service}/target/*.jar", returnStdout: true).trim()
+                        echo "Building Docker image for service: ${service} with JAR file: ${jarFile}..."
                         sh """
                             docker build \
-                                --build-arg ARTIFACT_NAME=${service}/target/*.jar \
+                                --build-arg ARTIFACT_NAME=${jarFile} \
                                 -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} \
                                 -f docker/Dockerfile .
                         """
