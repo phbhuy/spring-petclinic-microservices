@@ -66,8 +66,9 @@ pipeline {
                         sh """
                             docker build \
                                 --build-arg ARTIFACT_NAME=${jarFileName} \
+                                --build-arg JAR_DIR=${jarDir} \
                                 -t ${DOCKER_REPO}-${service}:${IMAGE_TAG} \
-                                -f ${service}/Dockerfile ${jarDir}
+                                -f ./docker/Dockerfile .
                         """
                     }
                 }
