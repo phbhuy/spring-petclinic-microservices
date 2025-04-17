@@ -1,14 +1,11 @@
 pipeline {
     agent any
 
-
     environment {
         DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'
         DOCKER_CRED_ID = 'dockerhub-cred'
-        SERVICES = 'spring-petclinic-config-server,spring-petclinic-discovery-server,spring-petclinic-api-gateway,spring-petclinic-genai-service,spring-petclinic-vets-service,spring-petclinic-visits-service,spring-petclinic-customers-service'
-        // Danh sách các service dưới dạng chuỗi
+        SERVICES = 'spring-petclinic-config-server,spring-petclinic-discovery-server,spring-petclinic-api-gateway,spring-petclinic-admin-server,spring-petclinic-genai-service,spring-petclinic-vets-service,spring-petclinic-visits-service,spring-petclinic-customers-service'
     }
-
 
     stages {
         stage('Checkout') {
@@ -26,7 +23,6 @@ pipeline {
             }
         }
 
-
         stage('Build & Test with Maven') {
             steps {
                 script {
@@ -38,7 +34,6 @@ pipeline {
             }
         }
 
-
         stage('Prepare Build Metadata') {
             steps {
                 script {
@@ -46,21 +41,20 @@ pipeline {
                         return scm.branches[0].name.replaceAll('^origin/', '').trim()
                     }
 
-
                     def branch = getGitBranchName()
                     def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-
 
                     echo "Branch: ${branch}"
                     echo "Commit: ${commitId}"
 
+                    def tagPart = (branch == 'main') ? 'latest' : commitId
+                    env.BRANCH_NAME = branch
+                    env.TAG_PART = tagPart
 
-                    env.IMAGE_TAG = (branch == 'main') ? 'latest' : commitId
-                    echo "Tag image: ${env.IMAGE_TAG}"
+                    echo "Generated tag suffix: ${TAG_PART}"
                 }
             }
         }
-
 
         stage('Build Docker Images') {
             steps {
@@ -70,24 +64,24 @@ pipeline {
                         def jarPath = sh(script: "ls ${service}/target/*.jar", returnStdout: true).trim()
                         def jarFileName = jarPath.tokenize('/').last()
 
+                        def fullTag = "${BRANCH_NAME}-${service}-${TAG_PART}"
 
-                        echo "Building Docker image for service: ${service} with JAR: ${jarFileName}"
+                        echo "Building Docker image for service: ${service} with JAR: ${jarFileName} and tag: ${fullTag}"
 
-
-                        // Copy file .jar vào thư mục ./docker để làm context build
                         sh """
-                            cp ${jarPath} ./docker/${jarFileName}
+                            if [ ! -f ${jarPath} ]; then
+                                echo "Error: JAR file not found for service: ${service}!"
+                                exit 1
+                            fi
                             docker build \
-                                --build-arg ARTIFACT_NAME=${jarFileName} \
-                                -t ${DOCKER_REPO}:${service}-${IMAGE_TAG} \
-                                -f ./docker/Dockerfile ./docker
-                            rm ./docker/${jarFileName}
+                                --build-arg ARTIFACT_NAME=${jarPath} \
+                                -t ${DOCKER_REPO}:${fullTag} \
+                                -f ./docker/Dockerfile .
                         """
                     }
                 }
             }
         }
-
 
         stage('Push Docker Images to DockerHub') {
             steps {
@@ -98,14 +92,15 @@ pipeline {
                 )]) {
                     script {
                         def services = SERVICES.split(',') // Chuyển chuỗi thành danh sách
+                        sh """
+                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                        """
                         for (service in services) {
-                            echo "Pushing Docker image for service: ${service} to DockerHub..."
-                            sh """
-                                echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                                docker push ${DOCKER_REPO}:${service}-${IMAGE_TAG}
-                                docker logout
-                            """
+                            def fullTag = "${BRANCH_NAME}-${service}-${TAG_PART}"
+                            echo "Pushing Docker image for service: ${service} with tag: ${fullTag} to DockerHub..."
+                            sh "docker push ${DOCKER_REPO}:${fullTag}"
                         }
+                        sh "docker logout"
                     }
                 }
             }
