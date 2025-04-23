@@ -12,36 +12,63 @@ pipeline {
         CHART_DIR = './job-developer-build/infrastructure'
     }
 
-    def IMAGE_TAGS = [:]
-
     stages {
         stage('Prepare Image Tags') {
             steps {
                 script {
                     def services = ['vets', 'visits', 'customers', 'genai']
-                    
+                    imageTags = [:]
 
                     services.each { svc ->
-                        def branchInput = params["${svc}_branch"]?.trim()
+                        def branchInput = params["${svc}_service"]?.trim()
                         def branch = branchInput ? branchInput : 'main'
                         def commitId = (branch == 'main') ? 'latest' :
                             sh(script: "git ls-remote https://github.com/phbhuy/spring-petclinic-microservices.git refs/heads/${branch} | cut -c1-7", returnStdout: true).trim()
-                        IMAGE_TAGS[svc] = "${branch}-spring-petclinic-${svc}-service-${commitId}"
-                        echo "${svc} ➜ Tag: ${IMAGE_TAGS[svc]}"
+                        imageTags[svc] = "${branch}-spring-petclinic-${svc}-service-${commitId}"
+                        echo "${svc} Tag: ${imageTags[svc]}"
                     }
                 }
             }
         }
 
-        stage('Deploy All Services with Helm') {
+        stage('Deploy Config & Discovery Server') {
             steps {
                 script {
                     sh """
                       helm upgrade --install infrastructure ${CHART_DIR} \\
-                        --set vets.image.tag=${IMAGE_TAGS['vets']} \\
-                        --set visits.image.tag=${IMAGE_TAGS['visits']} \\
-                        --set customers.image.tag=${IMAGE_TAGS['customers']} \\
-                        --set genai.image.tag=${IMAGE_TAGS['genai']}
+                        --set vets.enabled=false \\
+                        --set visits.enabled=false \\
+                        --set customers.enabled=false \\
+                        --set genai.enabled=false \\
+                        --set adminServer.enabled=false \\
+                        --set tracingServer.enabled=false \\
+                        --set gateway.enabled=false
+                    """
+                }
+            }
+        }
+
+        stage('Wait for Config & Discovery Ready') {
+            steps {
+                script {
+                    sh "kubectl rollout status deployment/spring-petclinic-config-server"
+                    sh "kubectl rollout status deployment/spring-petclinic-discovery-server"
+                }
+            }
+        }
+
+        stage('Deploy Remaining Services') {
+            steps {
+                script {
+                    sh """
+                      helm upgrade --install infrastructure ${CHART_DIR} \\
+                        --set vets.enabled=true --set vets.image.tag=${imageTags['vets']} \\
+                        --set visits.enabled=true --set visits.image.tag=${imageTags['visits']} \\
+                        --set customers.enabled=true --set customers.image.tag=${imageTags['customers']} \\
+                        --set genai.enabled=true --set genai.image.tag=${imageTags['genai']} \\
+                        --set adminServer.enabled=true \\
+                        --set tracingServer.enabled=true \\
+                        --set gateway.enabled=true
                     """
                 }
             }
@@ -58,11 +85,15 @@ pipeline {
                 script {
                     def minikubeIp = sh(script: "minikube ip", returnStdout: true).trim()
                     echo "Truy cập các service tại:"
-                    echo "API Gateway        : http://${minikubeIp}:30087"
-                    echo "Config Server      : http://${minikubeIp}:30085"
-                    echo "Discovery Server   : http://${minikubeIp}:30086"
-                    echo "Admin Server       : http://${minikubeIp}:30088"
-                    echo "Zipkin             : http://${minikubeIp}:30091/zipkin/"
+                    echo "API Gateway      : http://${minikubeIp}:30087"
+                    echo "Config Server    : http://${minikubeIp}:30085"
+                    echo "Discovery Server : http://${minikubeIp}:30086"
+                    echo "Admin Server     : http://${minikubeIp}:30088"
+                    echo "Zipkin           : http://${minikubeIp}:30091/zipkin/"
+                    echo "Customers Service: http://${minikubeIp}:30083"
+                    echo "Visits Service   : http://${minikubeIp}:30082"
+                    echo "Vets Service     : http://${minikubeIp}:30081"
+                    echo "GenAI Service    : http://${minikubeIp}:30084"
                 }
             }
         }
