@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-api-gateway
+  labels:
+    app: spring-petclinic-api-gateway
+spec:
+  replicas: {{ .Values.gateway.replicaCount | default .Values.global.replicaCount }}
+  selector:
+    matchLabels:
+      app: spring-petclinic-api-gateway
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-api-gateway
+    spec:
+      containers:
+        - name: spring-petclinic-api-gateway
+          image: "{{ .Values.global.image.repository }}-spring-petclinic-api-gateway:{{ .Values.gateway.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CONFIG_SERVER_URL
+              value: {{ .Values.gateway.env.CONFIG_SERVER_URL | quote }}
+            - name: DISCOVERY_SERVER_URL
+              value: {{ .Values.gateway.env.DISCOVERY_SERVER_URL | quote }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-petclinic-api-gateway
+  labels:
+    app: spring-petclinic-api-gateway
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: {{ .Values.gateway.service.nodePort }}
+  selector:
+    app: spring-petclinic-api-gateway

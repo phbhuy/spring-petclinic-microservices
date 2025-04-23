@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-genai-service
+  labels:
+    app: spring-petclinic-genai-service
+spec:
+  replicas: {{ .Values.genai.replicaCount | default .Values.global.replicaCount }}
+  selector:
+    matchLabels:
+      app: spring-petclinic-genai-service
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-genai-service
+    spec:
+      containers:
+        - name: spring-petclinic-genai-service
+          image: "{{ .Values.global.image.repository }}-spring-petclinic-genai-service:{{ .Values.genai.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - containerPort: 8084
+          env:
+            - name: CONFIG_SERVER_URL
+              value: {{ .Values.genai.env.CONFIG_SERVER_URL | quote }}
+            - name: OPENAI_API_KEY
+              value: {{ .Values.genai.env.OPENAI_API_KEY | quote }}
+            - name: AZURE_OPENAI_KEY
+              value: {{ .Values.genai.env.AZURE_OPENAI_KEY | quote }}
+            - name: AZURE_OPENAI_ENDPOINT
+              value: {{ .Values.genai.env.AZURE_OPENAI_ENDPOINT | quote }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-petclinic-genai-service
+  labels:
+    app: spring-petclinic-genai-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8084
+      targetPort: 8084
+      nodePort: {{ .Values.genai.service.nodePort }}
+  selector:
+    app: spring-petclinic-genai-service

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-tracing-server
+  labels:
+    app: spring-petclinic-tracing-server
+spec:
+  replicas: {{ .Values.tracingServer.replicaCount | default .Values.global.replicaCount }}
+  selector:
+    matchLabels:
+      app: spring-petclinic-tracing-server
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-tracing-server
+    spec:
+      containers:
+        - name: spring-petclinic-tracing-server
+          image: "{{ .Values.tracingServer.image.repository }}:{{ .Values.tracingServer.image.tag }}"
+          imagePullPolicy: {{ .Values.tracingServer.image.pullPolicy }}
+          ports:
+            - containerPort: 9411
+          env:
+            - name: STORAGE_TYPE
+              value: {{ .Values.tracingServer.env.STORAGE_TYPE | quote }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-petclinic-tracing-server
+  labels:
+    app: spring-petclinic-tracing-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9411
+      targetPort: 9411
+  selector:
+    app: spring-petclinic-tracing-server

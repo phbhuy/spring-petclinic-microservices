@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'vets_branch', defaultValue: '', description: 'Branch for vets-service')
+        string(name: 'visits_branch', defaultValue: '', description: 'Branch for visits-service')
+        string(name: 'customers_branch', defaultValue: '', description: 'Branch for customers-service')
+        string(name: 'genai_branch', defaultValue: '', description: 'Branch for genai-service')
+    }
+
+    environment {
+        CHART_DIR = './job-developer-build/infrastructure'
+    }
+
+    stages {
+        stage('Prepare Image Tags') {
+            steps {
+                script {
+                    def services = ['vets', 'visits', 'customers', 'genai']
+                    IMAGE_TAGS = [:]
+
+                    services.each { svc ->
+                        def branchInput = params["${svc}_branch"]?.trim()
+                        def branch = branchInput ? branchInput : 'main'
+                        def commitId = (branch == 'main') ? 'latest' :
+                            sh(script: "git ls-remote https://github.com/phbhuy/spring-petclinic-microservices.git refs/heads/${branch} | cut -c1-7", returnStdout: true).trim()
+                        IMAGE_TAGS[svc] = "${branch}-spring-petclinic-${svc}-service-${commitId}"
+                        echo "${svc} ➜ Tag: ${IMAGE_TAGS[svc]}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy All Services with Helm') {
+            steps {
+                script {
+                    sh """
+                      helm upgrade --install infrastructure ${CHART_DIR} \\
+                        --set vets.image.tag=${IMAGE_TAGS['vets']} \\
+                        --set visits.image.tag=${IMAGE_TAGS['visits']} \\
+                        --set customers.image.tag=${IMAGE_TAGS['customers']} \\
+                        --set genai.image.tag=${IMAGE_TAGS['genai']}
+                    """
+                }
+            }
+        }
+
+        stage('Check Pods Status') {
+            steps {
+                sh "kubectl get pods -o wide"
+            }
+        }
+
+        stage('Show Access Info') {
+            steps {
+                script {
+                    def minikubeIp = sh(script: "minikube ip", returnStdout: true).trim()
+                    echo "Truy cập các service tại:"
+                    echo "API Gateway        : http://${minikubeIp}:30087"
+                    echo "Config Server      : http://${minikubeIp}:30085"
+                    echo "Discovery Server   : http://${minikubeIp}:30086"
+                    echo "Admin Server       : http://${minikubeIp}:30088"
+                    echo "Zipkin             : http://${minikubeIp}:30091/zipkin/"
+                }
+            }
+        }
+    }
+}

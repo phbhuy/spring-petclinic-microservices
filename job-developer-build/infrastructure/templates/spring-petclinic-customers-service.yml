@@ -1,0 +1,43 @@
+{{- if .Values.customers.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-customers-service
+  labels:
+    app: spring-petclinic-customers-service
+spec:
+  replicas: {{ .Values.customers.replicaCount | default .Values.global.replicaCount }}
+  selector:
+    matchLabels:
+      app: spring-petclinic-customers-service
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-customers-service
+    spec:
+      containers:
+        - name: spring-petclinic-customers-service
+          image: "{{ .Values.global.image.repository }}-spring-petclinic-customers-service:{{ .Values.customers.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 8083
+          env:
+            - name: CONFIG_SERVER_URL
+              value: {{ .Values.customers.env.CONFIG_SERVER_URL | quote }}
+{{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-petclinic-customers-service
+  labels:
+    app: spring-petclinic-customers-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8083
+      targetPort: 8083
+      nodePort: {{ .Values.customers.service.nodePort }}
+  selector:
+    app: spring-petclinic-customers-service

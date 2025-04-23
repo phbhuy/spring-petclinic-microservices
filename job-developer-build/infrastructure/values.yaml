@@ -1,0 +1,80 @@
+global:
+  image:
+    repository: phbhuy19/spring-petclinic-microservices
+
+# ====== 4 SERVICE CHÍNH ======
+
+vets:
+  enabled: true
+  image:
+    tag: main-spring-petclinic-vets-service-latest     # Jenkins sẽ override nếu có input branch
+  service:
+    nodePort: 30081
+  env:
+    CONFIG_SERVER_URL: http://config-server:8888
+
+visits:
+  enabled: true
+  image:
+    tag: main-spring-petclinic-visits-service-latest   # Jenkins sẽ override nếu có input branch
+  service:
+    nodePort: 30082
+  env:
+    CONFIG_SERVER_URL: http://config-server:8888
+
+customers:
+  enabled: true
+  image:
+    tag: main-spring-petclinic-customers-service-latest
+  service:
+    nodePort: 30083
+  env:
+    CONFIG_SERVER_URL: http://config-server:8888
+
+genai:
+  enabled: true
+  image:
+    tag: main-spring-petclinic-genai-service-latest
+  service:
+    nodePort: 30084
+  env:
+    CONFIG_SERVER_URL: http://config-server:8888
+    OPENAI_API_KEY: YOUR_OPENAI_KEY
+    AZURE_OPENAI_KEY: YOUR_AZURE_KEY
+    AZURE_OPENAI_ENDPOINT: https://your-endpoint
+
+# ====== HẠ TẦNG - GIỮ NGUYÊN TAG MAIN ======
+
+configServer:
+  enabled: true
+  image:
+    tag: main-spring-petclinic-config-server-latest
+  service:
+    nodePort: 30085
+
+discoveryServer:
+  enabled: true
+  image:
+    tag: main-spring-petclinic-discovery-server-latest
+  service:
+    nodePort: 30086
+
+gateway:
+  enabled: true
+  image:
+    tag: main-spring-petclinic-api-gateway-latest
+  service:
+    nodePort: 30087
+
+adminServer:
+  enabled: true
+  image:
+    tag: main-spring-petclinic-admin-server-latest
+  service:
+    nodePort: 30088
+
+zipkin:
+  enabled: true
+  image: openzipkin/zipkin
+  service:
+    nodePort: 30091

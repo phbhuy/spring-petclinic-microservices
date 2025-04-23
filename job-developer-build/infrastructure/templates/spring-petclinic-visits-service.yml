@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-visits-service
+  labels:
+    app: spring-petclinic-visits-service
+spec:
+  replicas: {{ .Values.visits.replicaCount | default .Values.global.replicaCount }}
+  selector:
+    matchLabels:
+      app: spring-petclinic-visits-service
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-visits-service
+    spec:
+      containers:
+        - name: spring-petclinic-visits-service
+          image: "{{ .Values.global.image.repository }}-spring-petclinic-visits-service:{{ .Values.visits.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - containerPort: 8082
+          env:
+            - name: CONFIG_SERVER_URL
+              value: {{ .Values.visits.env.CONFIG_SERVER_URL | quote }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-petclinic-visits-service
+  labels:
+    app: spring-petclinic-visits-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8082
+      targetPort: 8082
+      nodePort: {{ .Values.visits.service.nodePort }}
+  selector:
+    app: spring-petclinic-visits-service

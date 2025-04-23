@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-vets-service
+  labels:
+    app: spring-petclinic-vets-service
+spec:
+  replicas: {{ .Values.vets.replicaCount | default .Values.global.replicaCount }}
+  selector:
+    matchLabels:
+      app: spring-petclinic-vets-service
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-vets-service
+    spec:
+      containers:
+        - name: spring-petclinic-vets-service
+          image: "{{ .Values.global.image.repository }}-spring-petclinic-vets-service:{{ .Values.vets.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - containerPort: 8081
+          env:
+            - name: CONFIG_SERVER_URL
+              value: {{ .Values.vets.env.CONFIG_SERVER_URL | quote }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-petclinic-vets-service
+  labels:
+    app: spring-petclinic-vets-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8081
+      targetPort: 8081
+      nodePort: {{ .Values.vets.service.nodePort }}
+  selector:
+    app: spring-petclinic-vets-service

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-admin-server
+  labels:
+    app: spring-petclinic-admin-server
+spec:
+  replicas: {{ .Values.adminServer.replicaCount | default .Values.global.replicaCount }}
+  selector:
+    matchLabels:
+      app: spring-petclinic-admin-server
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-admin-server
+    spec:
+      containers:
+        - name: spring-petclinic-admin-server
+          image: "{{ .Values.global.image.repository }}-spring-petclinic-admin-server:{{ .Values.adminServer.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - containerPort: 9090
+          env:
+            - name: CONFIG_SERVER_URL
+              value: {{ .Values.adminServer.env.CONFIG_SERVER_URL | quote }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-petclinic-admin-server
+  labels:
+    app: spring-petclinic-admin-server
+spec:
+  type: NodePort
+  ports:
+    - port: 9090
+      targetPort: 9090
+      nodePort: {{ .Values.adminServer.service.nodePort }}
+  selector:
+    app: spring-petclinic-admin-server
