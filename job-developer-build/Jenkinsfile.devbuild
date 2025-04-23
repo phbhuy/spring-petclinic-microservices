@@ -17,7 +17,7 @@ pipeline {
             steps {
                 script {
                     def services = ['vets', 'visits', 'customers', 'genai']
-                    IMAGE_TAGS = [:]
+                    def IMAGE_TAGS = [:]
 
                     services.each { svc ->
                         def branchInput = params["${svc}_branch"]?.trim()
