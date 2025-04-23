@@ -38,9 +38,9 @@ metadata:
     app: spring-petclinic-tracing-server
 spec:
   type: ClusterIP
+  selector:
+    app: spring-petclinic-tracing-server
   ports:
     - port: 9411
       targetPort: 9411
-  selector:
-    app: spring-petclinic-tracing-server
 {{- end }}

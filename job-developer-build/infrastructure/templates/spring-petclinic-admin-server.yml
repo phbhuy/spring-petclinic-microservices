@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: admin
-          image: "{{ .Values.global.image.repository }}-spring-petclinic-admin-server:{{ .Values.adminServer.image.tag }}"
+          image: "{{ .Values.global.image.repository }}:{{ .Values.adminServer.image.tag }}"
           imagePullPolicy: {{ .Values.global.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: 9090

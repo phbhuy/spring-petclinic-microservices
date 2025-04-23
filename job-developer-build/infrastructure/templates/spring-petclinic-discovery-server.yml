@@ -20,15 +20,14 @@ spec:
           image: "{{ .Values.global.image.repository }}:{{ .Values.discoveryServer.image.tag }}"
           imagePullPolicy: {{ .Values.global.image.pullPolicy | default "IfNotPresent" }}
           ports:
-            - name: http
-              containerPort: 8761
-{{- if .Values.discoveryServer.env }}
+            - containerPort: 8761
+          {{- if .Values.discoveryServer.env }}
           env:
-{{- range $key, $val := .Values.discoveryServer.env }}
+            {{- range $key, $val := .Values.discoveryServer.env }}
             - name: {{ $key }}
               value: {{ $val | quote }}
-{{- end }}
-{{- end }}
+            {{- end }}
+          {{- end }}
 
 ---
 apiVersion: v1
@@ -39,10 +38,9 @@ metadata:
     app: spring-petclinic-discovery-server
 spec:
   type: ClusterIP
-  ports:
-    - name: http
-      port: 8761
-      targetPort: 8761
   selector:
     app: spring-petclinic-discovery-server
+  ports:
+    - port: 8761
+      targetPort: 8761
 {{- end }}

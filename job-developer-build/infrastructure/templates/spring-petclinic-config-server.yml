@@ -6,7 +6,7 @@ metadata:
   labels:
     app: spring-petclinic-config-server
 spec:
-  replicas: {{ .Values.configServer.replicaCount | default .Values.global.replicaCount }}
+  replicas: {{ .Values.configServer.replicaCount | default .Values.global.replicaCount | default 1 }}
   selector:
     matchLabels:
       app: spring-petclinic-config-server
@@ -21,13 +21,13 @@ spec:
           imagePullPolicy: {{ .Values.global.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: 8888
-{{- if .Values.configServer.env }}
+          {{- if .Values.configServer.env }}
           env:
-{{- range $key, $value := .Values.configServer.env }}
+            {{- range $key, $value := .Values.configServer.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
-{{- end }}
-{{- end }}
+            {{- end }}
+          {{- end }}
 
 ---
 apiVersion: v1
@@ -38,9 +38,9 @@ metadata:
     app: spring-petclinic-config-server
 spec:
   type: ClusterIP
+  selector:
+    app: spring-petclinic-config-server
   ports:
     - port: 8888
       targetPort: 8888
-  selector:
-    app: spring-petclinic-config-server
 {{- end }}

@@ -1,13 +1,14 @@
 global:
   image:
     repository: phbhuy19/spring-petclinic-microservices
+    pullPolicy: IfNotPresent
 
 # ====== 4 SERVICE CHÍNH ======
 
 vets:
   enabled: true
   image:
-    tag: main-spring-petclinic-vets-service-latest     # Jenkins sẽ override nếu có input branch
+    tag: main-spring-petclinic-vets-service-latest
   service:
     nodePort: 30081
   env:
@@ -16,7 +17,7 @@ vets:
 visits:
   enabled: true
   image:
-    tag: main-spring-petclinic-visits-service-latest   # Jenkins sẽ override nếu có input branch
+    tag: main-spring-petclinic-visits-service-latest
   service:
     nodePort: 30082
   env:
