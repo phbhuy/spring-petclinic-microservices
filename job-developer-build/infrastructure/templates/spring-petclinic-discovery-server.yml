@@ -21,13 +21,13 @@ spec:
           imagePullPolicy: {{ .Values.global.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: 8761
-          {{- if .Values.discoveryServer.env }}
+{{- if .Values.discoveryServer.env }}
           env:
-            {{- range $key, $val := .Values.discoveryServer.env }}
+{{- range $key, $val := .Values.discoveryServer.env }}
             - name: {{ $key }}
               value: {{ $val | quote }}
-            {{- end }}
-          {{- end }}
+{{- end }}
+{{- end }}
 
 ---
 apiVersion: v1
