@@ -12,7 +12,7 @@ vets:
   service:
     nodePort: 30081
   env:
-    CONFIG_SERVER_URL: http://config-server:8888
+    CONFIG_SERVER_URL: http://spring-petclinic-config-server:8888
 
 visits:
   enabled: true
@@ -21,7 +21,7 @@ visits:
   service:
     nodePort: 30082
   env:
-    CONFIG_SERVER_URL: http://config-server:8888
+    CONFIG_SERVER_URL: http://spring-petclinic-config-server:8888
 
 customers:
   enabled: true
@@ -30,7 +30,7 @@ customers:
   service:
     nodePort: 30083
   env:
-    CONFIG_SERVER_URL: http://config-server:8888
+    CONFIG_SERVER_URL: http://spring-petclinic-config-server:8888
 
 genai:
   enabled: true
@@ -39,7 +39,7 @@ genai:
   service:
     nodePort: 30084
   env:
-    CONFIG_SERVER_URL: http://config-server:8888
+    CONFIG_SERVER_URL: http://spring-petclinic-config-server:8888
     OPENAI_API_KEY: YOUR_OPENAI_KEY
     AZURE_OPENAI_KEY: YOUR_AZURE_KEY
     AZURE_OPENAI_ENDPOINT: https://your-endpoint
@@ -67,8 +67,8 @@ gateway:
   service:
     nodePort: 30087
   env:
-    CONFIG_SERVER_URL: http://config-server:8888
-    DISCOVERY_SERVER_URL: http://discovery-server:8761
+    CONFIG_SERVER_URL: http://spring-petclinic-config-server:8888
+    DISCOVERY_SERVER_URL: http://spring-petclinic-discovery-server:8761
 
 adminServer:
   enabled: true
