@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'vets_branch', defaultValue: '', description: 'Branch for vets-service')
-        string(name: 'visits_branch', defaultValue: '', description: 'Branch for visits-service')
-        string(name: 'customers_branch', defaultValue: '', description: 'Branch for customers-service')
-        string(name: 'genai_branch', defaultValue: '', description: 'Branch for genai-service')
+        string(name: 'vets_service', defaultValue: 'main', description: 'Branch for vets-service')
+        string(name: 'visits_service', defaultValue: 'main', description: 'Branch for visits-service')
+        string(name: 'customers_service', defaultValue: 'main', description: 'Branch for customers-service')
+        string(name: 'genai_service', defaultValue: 'main', description: 'Branch for genai-service')
     }
 
     environment {
