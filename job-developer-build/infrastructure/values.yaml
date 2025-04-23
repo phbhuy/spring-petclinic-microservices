@@ -59,6 +59,8 @@ discoveryServer:
     tag: main-spring-petclinic-discovery-server-latest
   service:
     nodePort: 30086
+  env:
+    CONFIG_SERVER_URL: http://spring-petclinic-config-server:8888
 
 gateway:
   enabled: true
