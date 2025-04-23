@@ -10,7 +10,7 @@ pipeline {
 
     environment {
         CHART_DIR = './job-developer-build/infrastructure/'
-        MINIKUBE_IP = '192.168.49.2'   // IP cố định của Minikube
+        MINIKUBE_IP = '192.168.49.2'
     }
 
     stages {
@@ -81,7 +81,25 @@ pipeline {
             }
         }
 
-        // 🚨 Sửa đoạn này
+        stage('Validate Pods Health') {
+            steps {
+                script {
+                    def badPods = sh(
+                        script: "kubectl get pods --no-headers | grep -E 'CrashLoopBackOff|Error|ImagePullBackOff' || true",
+                        returnStdout: true
+                    ).trim()
+
+                    if (badPods) {
+                        echo "Một số pod đang gặp sự cố:"
+                        echo badPods
+                        error("Deployment failed do có pod lỗi!")
+                    } else {
+                        echo "Tất cả pods đều chạy ổn định!"
+                    }
+                }
+            }
+        }
+
         stage('Show Access Info') {
             steps {
                 script {
