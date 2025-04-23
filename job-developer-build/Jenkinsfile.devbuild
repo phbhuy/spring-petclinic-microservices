@@ -12,12 +12,14 @@ pipeline {
         CHART_DIR = './job-developer-build/infrastructure'
     }
 
+    def IMAGE_TAGS = [:]
+
     stages {
         stage('Prepare Image Tags') {
             steps {
                 script {
                     def services = ['vets', 'visits', 'customers', 'genai']
-                    def IMAGE_TAGS = [:]
+                    
 
                     services.each { svc ->
                         def branchInput = params["${svc}_branch"]?.trim()
