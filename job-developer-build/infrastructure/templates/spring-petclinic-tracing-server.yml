@@ -1,3 +1,4 @@
+{{- if .Values.tracingServer.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,7 +6,7 @@ metadata:
   labels:
     app: spring-petclinic-tracing-server
 spec:
-  replicas: {{ .Values.tracingServer.replicaCount | default .Values.global.replicaCount }}
+  replicas: {{ .Values.tracingServer.replicaCount | default 1 }}
   selector:
     matchLabels:
       app: spring-petclinic-tracing-server
@@ -17,12 +18,16 @@ spec:
       containers:
         - name: spring-petclinic-tracing-server
           image: "{{ .Values.tracingServer.image.repository }}:{{ .Values.tracingServer.image.tag }}"
-          imagePullPolicy: {{ .Values.tracingServer.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.tracingServer.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: 9411
+          {{- if .Values.tracingServer.env }}
           env:
-            - name: STORAGE_TYPE
-              value: {{ .Values.tracingServer.env.STORAGE_TYPE | quote }}
+            {{- range $key, $val := .Values.tracingServer.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          {{- end }}
 
 ---
 apiVersion: v1
@@ -38,3 +43,4 @@ spec:
       targetPort: 9411
   selector:
     app: spring-petclinic-tracing-server
+{{- end }}
