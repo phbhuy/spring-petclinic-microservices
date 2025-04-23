@@ -10,7 +10,7 @@ pipeline {
 
     environment {
         CHART_DIR = './job-developer-build/infrastructure/'
-        MINIKUBE_IP = '192.168.49.2'
+        MINIKUBE_IP = '192.168.49.2'   // IP cố định của Minikube
     }
 
     stages {
@@ -81,20 +81,20 @@ pipeline {
             }
         }
 
+        // 🚨 Sửa đoạn này
         stage('Show Access Info') {
             steps {
                 script {
-                    def minikubeIp = sh(script: "minikube ip", returnStdout: true).trim()
                     echo "Truy cập các service tại:"
-                    echo "API Gateway      : http://${minikubeIp}:30087"
-                    echo "Config Server    : http://${minikubeIp}:30085"
-                    echo "Discovery Server : http://${minikubeIp}:30086"
-                    echo "Admin Server     : http://${minikubeIp}:30088"
-                    echo "Zipkin           : http://${minikubeIp}:30091/zipkin/"
-                    echo "Customers Service: http://${minikubeIp}:30083"
-                    echo "Visits Service   : http://${minikubeIp}:30082"
-                    echo "Vets Service     : http://${minikubeIp}:30081"
-                    echo "GenAI Service    : http://${minikubeIp}:30084"
+                    echo "API Gateway      : http://${env.MINIKUBE_IP}:30087"
+                    echo "Config Server    : http://${env.MINIKUBE_IP}:30085"
+                    echo "Discovery Server : http://${env.MINIKUBE_IP}:30086"
+                    echo "Admin Server     : http://${env.MINIKUBE_IP}:30088"
+                    echo "Zipkin           : http://${env.MINIKUBE_IP}:30091/zipkin/"
+                    echo "Customers Service: http://${env.MINIKUBE_IP}:30083"
+                    echo "Visits Service   : http://${env.MINIKUBE_IP}:30082"
+                    echo "Vets Service     : http://${env.MINIKUBE_IP}:30081"
+                    echo "GenAI Service    : http://${env.MINIKUBE_IP}:30084"
                 }
             }
         }
