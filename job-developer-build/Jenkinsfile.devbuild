@@ -9,7 +9,7 @@ pipeline {
     }
 
     environment {
-        CHART_DIR = './job-developer-build/infrastructure'
+        CHART_DIR = './job-developer-build/infrastructure/templates/'
     }
 
     stages {
