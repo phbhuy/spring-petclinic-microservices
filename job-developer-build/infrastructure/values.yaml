@@ -65,6 +65,9 @@ gateway:
     tag: main-spring-petclinic-api-gateway-latest
   service:
     nodePort: 30087
+  env:
+    CONFIG_SERVER_URL: http://config-server:8888
+    DISCOVERY_SERVER_URL: http://discovery-server:8761
 
 adminServer:
   enabled: true
@@ -73,8 +76,15 @@ adminServer:
   service:
     nodePort: 30088
 
-zipkin:
+tracingServer:
   enabled: true
-  image: openzipkin/zipkin
+  replicaCount: 1
+  image:
+    repository: openzipkin/zipkin
+    tag: latest
+    pullPolicy: IfNotPresent
+  env:
+    STORAGE_TYPE: mem
   service:
-    nodePort: 30091
+    type: ClusterIP
+    port: 30091
