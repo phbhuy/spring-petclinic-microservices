@@ -1,13 +1,6 @@
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'vets_service', defaultValue: 'main', description: 'Branch for vets-service')
-        string(name: 'visits_service', defaultValue: 'main', description: 'Branch for visits-service')
-        string(name: 'customers_service', defaultValue: 'main', description: 'Branch for customers-service')
-        string(name: 'genai_service', defaultValue: 'main', description: 'Branch for genai-service')
-    }
-
     environment {
         CHART_DIR = './job-developer-build/infrastructure/'
         MINIKUBE_IP = '192.168.49.2'
@@ -18,7 +11,7 @@ pipeline {
             steps {
                 script {
                     def services = ['vets', 'visits', 'customers', 'genai']
-                    imageTags = [:]
+                    def imageTags = [:]
 
                     services.each { svc ->
                         def branchInput = params["${svc}_service"]?.trim()
