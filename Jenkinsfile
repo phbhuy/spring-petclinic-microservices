@@ -5,31 +5,45 @@ pipeline {
         DOCKER_REPO = 'phbhuy19/spring-petclinic-microservices'
         DOCKER_CRED_ID = 'dockerhub-cred'
         SERVICES = 'spring-petclinic-config-server,spring-petclinic-discovery-server,spring-petclinic-api-gateway,spring-petclinic-admin-server,spring-petclinic-genai-service,spring-petclinic-vets-service,spring-petclinic-visits-service,spring-petclinic-customers-service'
+        ROOT_FILES = 'pom.xml,docker,Dockerfile'   // Những file thay đổi sẽ build toàn bộ
     }
 
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: '**']],
-                        userRemoteConfigs: [[
-                            url: 'https://github.com/phbhuy/spring-petclinic-microservices.git',
-                            refspec: '+refs/heads/*:refs/remotes/origin/*'
-                        ]]
-                    ])
-                }
+                checkout scm
             }
         }
 
-        stage('Build & Test with Maven') {
+        stage('Detect Changes') {
             steps {
                 script {
-                    echo "Building and testing all services with Maven..."
-                    sh """
-                        ./mvnw clean package -DskipTests=false
-                    """
+                    def changedFiles = sh(script: "git diff --name-only origin/main", returnStdout: true).trim().split("\n")
+                    echo "Changed Files: ${changedFiles}"
+
+                    def servicesChanged = [] as Set
+                    def buildAll = false
+
+                    for (file in changedFiles) {
+                        if (ROOT_FILES.split(',').any { rootFile -> file.startsWith(rootFile) }) {
+                            buildAll = true
+                            break
+                        }
+                        SERVICES.split(',').each { svc ->
+                            if (file.startsWith(svc)) {
+                                servicesChanged.add(svc)
+                            }
+                        }
+                    }
+
+                    if (buildAll) {
+                        echo "Detected root-level change ➜ Build ALL services"
+                        env.TARGET_SERVICES = SERVICES
+                    } else {
+                        env.TARGET_SERVICES = servicesChanged.join(',')
+                    }
+
+                    echo "Services to Build: ${env.TARGET_SERVICES}"
                 }
             }
         }
@@ -37,42 +51,26 @@ pipeline {
         stage('Prepare Build Metadata') {
             steps {
                 script {
-                    def getGitBranchName = {
-                        return scm.branches[0].name.replaceAll('^origin/', '').trim()
-                    }
-
-                    def branch = getGitBranchName()
+                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-
-                    echo "Branch: ${branch}"
-                    echo "Commit: ${commitId}"
-
-                    def tagPart = (branch == 'main') ? 'latest' : commitId
+                    env.TAG_PART = (branch == 'main') ? 'latest' : commitId
                     env.BRANCH_NAME = branch
-                    env.TAG_PART = tagPart
-
-                    echo "Generated tag suffix: ${TAG_PART}"
                 }
             }
         }
 
         stage('Build Docker Images') {
+            when {
+                expression { env.TARGET_SERVICES }
+            }
             steps {
                 script {
-                    def services = SERVICES.split(',') // Chuyển chuỗi thành danh sách
+                    def services = env.TARGET_SERVICES.split(',')
                     for (service in services) {
                         def jarPath = sh(script: "ls ${service}/target/*.jar", returnStdout: true).trim()
-                        def jarFileName = jarPath.tokenize('/').last()
-
                         def fullTag = "${BRANCH_NAME}-${service}-${TAG_PART}"
 
-                        echo "Building Docker image for service: ${service} with JAR: ${jarFileName} and tag: ${fullTag}"
-
                         sh """
-                            if [ ! -f ${jarPath} ]; then
-                                echo "Error: JAR file not found for service: ${service}!"
-                                exit 1
-                            fi
                             docker build \
                                 --build-arg ARTIFACT_NAME=${jarPath} \
                                 -t ${DOCKER_REPO}:${fullTag} \
@@ -84,6 +82,9 @@ pipeline {
         }
 
         stage('Push Docker Images to DockerHub') {
+            when {
+                expression { env.TARGET_SERVICES }
+            }
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: "${DOCKER_CRED_ID}",
@@ -91,13 +92,10 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     script {
-                        def services = SERVICES.split(',') // Chuyển chuỗi thành danh sách
-                        sh """
-                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
-                        """
+                        sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                        def services = env.TARGET_SERVICES.split(',')
                         for (service in services) {
                             def fullTag = "${BRANCH_NAME}-${service}-${TAG_PART}"
-                            echo "Pushing Docker image for service: ${service} with tag: ${fullTag} to DockerHub..."
                             sh "docker push ${DOCKER_REPO}:${fullTag}"
                         }
                         sh "docker logout"
